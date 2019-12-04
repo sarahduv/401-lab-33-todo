@@ -5,6 +5,8 @@
   "keywords": [],
   "main": "src/index.js",
   "dependencies": {
+    "enzyme": "^3.10.0",
+    "enzyme-adapter-react-16": "^1.15.1",
     "eslint": "^5.16.0",
     "lint": "^0.7.0",
     "node-sass": "^4.12.0",
@@ -20,7 +22,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
-    "lint": "eslint ./src/components/settings/*.js --fix",
+    "lint": "eslint ./src/components/if/*.js --fix",
     "eject": "react-scripts eject"
   },
   "browserslist": {

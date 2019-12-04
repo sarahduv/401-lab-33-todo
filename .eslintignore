@@ -8,3 +8,8 @@ node_modules/**
 **/modal.js
 **/form.js
 **/typedRow.js
+**/app.js
+**/context.js
+**/index.js
+**/todo-connected.js
+**/todo.js

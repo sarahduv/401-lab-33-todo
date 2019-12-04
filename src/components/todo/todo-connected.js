@@ -1,42 +1,50 @@
-import React from "react";
-import { When } from "../if";
-import Modal from "../modal";
+import React from 'react';
+import { When } from '../if';
+import Modal from '../modal';
 
-import "./todo.scss";
+import { SettingsContext } from '../context/context.js';
+
+import './todo.scss';
 
 const todoAPI = 'https://api-js401.herokuapp.com/api/v1/todo';
 
 class ToDo extends React.Component {
+  static contextType = SettingsContext;
+
   constructor(props) {
     super(props);
     this.state = {
       todoList: [],
       item: {},
       showDetails: false,
-      details: {}
+      details: {},
+      currentPage: 0,
+      itemsPerPage: 3
     };
   }
 
   handleInputChange = e => {
-    this.setState({ item: {...this.state.item, [e.target.name]: e.target.value} });
+    this.setState({
+      item: { ...this.state.item, [e.target.name]: e.target.value }
+    });
   };
 
-  callAPI = (url, method='get', body, handler, errorHandler) => {
-
+  callAPI = (url, method = 'get', body, handler, errorHandler) => {
     return fetch(url, {
       method: method,
       mode: 'cors',
       cache: 'no-cache',
       headers: { 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? JSON.stringify(body) : undefined
     })
-    .then(response => response.json())
-    .then(data => typeof handler === "function" ? handler(data) : null )
-    .catch( (e) => typeof errorHandler === "function" ? errorHandler(e) : console.error(e)  );
+      .then(response => response.json())
+      .then(data => (typeof handler === 'function' ? handler(data) : null))
+      .catch(e =>
+        typeof errorHandler === 'function' ? errorHandler(e) : console.error(e)
+      );
   };
 
-  addItem = (e) => {
-
+  addItem = e => {
     e.preventDefault();
     e.target.reset();
 
@@ -45,32 +53,32 @@ class ToDo extends React.Component {
         todoList: [...this.state.todoList, newItem]
       });
 
-    this.callAPI( todoAPI, 'POST', this.state.item, _updateState );
-
+    this.callAPI(todoAPI, 'POST', this.state.item, _updateState);
   };
 
   deleteItem = id => {
-
-    const _updateState = (results) =>
+    const _updateState = results =>
       this.setState({
         todoList: this.state.todoList.filter(item => item._id !== id)
       });
 
-    this.callAPI( `${todoAPI}/${id}`, 'DELETE', undefined, _updateState );
-
+    this.callAPI(`${todoAPI}/${id}`, 'DELETE', undefined, _updateState);
   };
 
   saveItem = updatedItem => {
-
-    const _updateState = (newItem) =>
+    const _updateState = newItem =>
       this.setState({
         todoList: this.state.todoList.map(item =>
           item._id === newItem._id ? newItem : item
         )
       });
 
-    this.callAPI( `${todoAPI}/${updatedItem.id}`, 'PUT', updatedItem, _updateState );
-
+    this.callAPI(
+      `${todoAPI}/${updatedItem.id}`,
+      'PUT',
+      updatedItem,
+      _updateState
+    );
   };
 
   toggleComplete = id => {
@@ -82,34 +90,32 @@ class ToDo extends React.Component {
   };
 
   toggleDetails = id => {
-    let showDetails = ! this.state.showDetails;
-    let details = this.state.todoList.filter( item => item._id === id )[0] || {}
-    this.setState({details, showDetails});
-  }
+    let showDetails = !this.state.showDetails;
+    let details = this.state.todoList.filter(item => item._id === id)[0] || {};
+    this.setState({ details, showDetails });
+  };
 
   getTodoItems = () => {
     const _updateState = data => this.setState({ todoList: data.results });
-    this.callAPI( todoAPI, 'GET', undefined, _updateState );
+    this.callAPI(todoAPI, 'GET', undefined, _updateState);
   };
 
   componentDidMount = () => {
     this.getTodoItems();
-  }
+  };
 
   render() {
-
     return (
       <>
         <header>
           <h2>
             There are
-            {this.state.todoList.filter( item => !item.complete ).length}
+            {this.state.todoList.filter(item => !item.complete).length}
             Items To Complete
           </h2>
         </header>
 
         <section className="todo">
-
           <div>
             <h3>Add Item</h3>
             <form onSubmit={this.addItem}>
@@ -123,15 +129,31 @@ class ToDo extends React.Component {
               </label>
               <label>
                 <span>Difficulty Rating</span>
-                <input type="range" min="1" max="5" name="difficulty" defaultValue="3" onChange={this.handleInputChange} />
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  name="difficulty"
+                  defaultValue="3"
+                  onChange={this.handleInputChange}
+                />
               </label>
               <label>
                 <span>Assigned To</span>
-                <input type="text" name="assignee" placeholder="Assigned To" onChange={this.handleInputChange} />
+                <input
+                  type="text"
+                  name="assignee"
+                  placeholder="Assigned To"
+                  onChange={this.handleInputChange}
+                />
               </label>
               <label>
                 <span>Due</span>
-                <input type="date" name="due" onChange={this.handleInputChange} />
+                <input
+                  type="date"
+                  name="due"
+                  onChange={this.handleInputChange}
+                />
               </label>
               <button>Add Item</button>
             </form>
@@ -139,25 +161,64 @@ class ToDo extends React.Component {
 
           <div>
             <ul>
-              { this.state.todoList.map(item => (
-                <li
-                  className={`complete-${item.complete.toString()}`}
-                  key={item._id}
-                >
-              <span onClick={() => this.toggleComplete(item._id)}>
-                {item.text}
-              </span>
-                  <button onClick={() => this.toggleDetails(item._id)}>
-                    Details
-                  </button>
-                  <button onClick={() => this.deleteItem(item._id)}>
-                    Delete
-                  </button>
-                </li>
-              ))}
+              {this.state.todoList
+                .slice(
+                  this.state.currentPage * this.state.itemsPerPage,
+                  this.state.currentPage * this.state.itemsPerPage +
+                    this.state.itemsPerPage
+                )
+                .map(item => (
+                  <li
+                    className={`complete-${item.complete.toString()}`}
+                    key={item._id}
+                  >
+                    <span onClick={() => this.toggleComplete(item._id)}>
+                      {item.text}
+                    </span>
+                    <button onClick={() => this.toggleDetails(item._id)}>
+                      Details
+                    </button>
+                    <button onClick={() => this.deleteItem(item._id)}>
+                      Delete
+                    </button>
+                  </li>
+                ))}
             </ul>
           </div>
         </section>
+
+        <div>
+          <div>Total items: {this.state.todoList.length}</div>
+          <div>Items per page: {this.state.itemsPerPage}</div>
+          <div>Current page is {this.state.currentPage + 1}</div>
+          <div>
+            Total pages:{' '}
+            {Math.ceil(this.state.todoList.length / this.state.itemsPerPage)}
+          </div>
+          <When condition={this.state.currentPage > 0}>
+            <input
+              type="button"
+              value="back"
+              onClick={() =>
+                this.setState({ currentPage: this.state.currentPage - 1 })
+              }
+            />
+          </When>
+          <When
+            condition={
+              this.state.currentPage <
+              Math.floor(this.state.todoList.length / this.state.itemsPerPage)
+            }
+          >
+            <input
+              type="button"
+              value="next"
+              onClick={() =>
+                this.setState({ currentPage: this.state.currentPage + 1 })
+              }
+            />
+          </When>
+        </div>
 
         <When condition={this.state.showDetails}>
           <Modal title="To Do Item" close={this.toggleDetails}>
@@ -166,9 +227,7 @@ class ToDo extends React.Component {
                 <span>Assigned To: {this.state.details.assignee}</span>
                 <span>Due: {this.state.details.due}</span>
               </header>
-              <div className="item">
-                {this.state.details.text}
-              </div>
+              <div className="item">{this.state.details.text}</div>
             </div>
           </Modal>
         </When>
